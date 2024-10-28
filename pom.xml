@@ -14,4 +14,13 @@
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
     </properties>
 
+    <dependencies>
+        <dependency>
+            <groupId>org.json</groupId>
+            <artifactId>json</artifactId>
+            <version>20211205</version> <!-- 版本号可以在Maven仓库中检查最新 -->
+        </dependency>
+    </dependencies>
+
+
 </project>

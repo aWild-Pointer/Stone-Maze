@@ -1,21 +1,30 @@
 package org.example;
 
+import org.json.JSONArray;
+import org.json.JSONException;
+import org.json.JSONObject;
+
 import javax.swing.*;
 import java.awt.*;
 import java.awt.event.KeyAdapter;
 import java.awt.event.KeyEvent;
+import java.io.*;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 
 public class MainFrame extends JFrame {
     public static final int ARRAY_SIZE = 4;
-    public static final String IMAGE_PATH = "G:/java/OBJ/Stone-Maze/src/main/java/org/example/image/";
+    public static final String IMAGE_PATH = "src/main/resources/image/";
     private  int[][] imageDate = new int[ARRAY_SIZE][ARRAY_SIZE];
     // 空白色块
     private int row;// 行
     private int col;// 列
     private int step=0;
+
+    private JLabel timerLabel; // 计时器标签作为类成员
+    private int timeElapsed;   // 记录经过的时间（秒）
+
     // 成功
     private int[][] winData = new int[][]{
             {1,2,3,4},
@@ -31,7 +40,7 @@ public class MainFrame extends JFrame {
         // 4、打乱图片顺序
         RandomArrayInit();
         // 2、初始化界面信息，展示图片
-        ImageInit();
+        imageInit();
         // 3、初始化系统菜单
         MenuInit();
         // 5、绑定方向按键
@@ -51,12 +60,30 @@ public class MainFrame extends JFrame {
         this.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
         // 设置布局方式为绝对位 置定位
         this.setLayout(null);
+
+        // 初始化计时器标签
+        timerLabel = new JLabel("Time: 0 seconds");
+        timerLabel.setBounds(300, 20, 150, 20);  // 设置位置
+        timerLabel.setForeground(Color.red);
+        timerLabel.setFont(new Font("Arial", Font.BOLD, 15));
+        this.add(timerLabel);
+
+        // 初始化计时器
+        Timer timer = new Timer(1000, e -> {
+            timeElapsed++;
+            timerLabel.setText("Time: " + timeElapsed + " seconds");
+        });
+        timer.start();
     }
 
     // 在窗口上展示图片
-    private void ImageInit(){
+    private void imageInit() {
+
         // 清空图层
         this.getContentPane().removeAll();
+
+        // 重新添加计时器标签，确保它显示
+        this.add(timerLabel);
 
         // 显示步数 给窗口添加展示文字的组件
         JLabel stepShow = new JLabel("当前移动"+step+"步");
@@ -74,7 +101,7 @@ public class MainFrame extends JFrame {
             jLabel.setBounds(100,200,260,80);
             this.add(jLabel);
         }
-        
+
         for(int i = 0 ; i < imageDate.length ; i++){
             for(int j = 0 ; j < imageDate[i].length ; j++){
                 // 获取图片名称
@@ -112,23 +139,127 @@ public class MainFrame extends JFrame {
 
     private void MenuInit(){
         JMenuBar menuBar = new JMenuBar();
-        JMenu menu = new JMenu("System");
+        JMenu system = new JMenu("System");
+        JMenu save = new JMenu("Save");
+        JMenu load = new JMenu("Load");
+        JMenu about = new JMenu("About");
+
         JMenuItem exit = new JMenuItem("Exit");
-        menu.add(exit);
+        system.add(exit);
         exit.addActionListener(e -> {
             dispose();
         });
 
         JMenuItem restart = new JMenuItem("Restart");
-        menu.add(restart);
+        system.add(restart);
         restart.addActionListener(e -> {
             RandomArrayInit();
             step=0;
-            ImageInit();
+            imageInit();
 
         });
-        menuBar.add(menu);
+        menuBar.add(system);
+
+        // 为“Save”菜单添加保存功能
+        JMenuItem saveItem = new JMenuItem("Local Save");
+        save.add(saveItem);
+        saveItem.addActionListener(e -> {
+            saveGame();
+        });
+        menuBar.add(save);
+
+        // 为“Load”菜单添加读取功能
+        JMenuItem loadItem = new JMenuItem("Load Progress");
+        load.add(loadItem);
+        loadItem.addActionListener(e -> {
+            loadGame();
+            imageInit();
+        });
+        menuBar.add(load);
+
+
+        // 为“About”菜单添加鼠标监听器
+        about.addMouseListener(new java.awt.event.MouseAdapter() {
+            @Override
+            public void mouseClicked(java.awt.event.MouseEvent e) {
+                JOptionPane.showMessageDialog(null,
+                        "This is Stone-Maze version 1.0.\nDeveloped by aWild-Pointer.\nresource:https://github.com/aWild-Pointer/Stone-Maze",
+                        "About",
+                        JOptionPane.INFORMATION_MESSAGE);
+            }
+        });
+        menuBar.add(about);
+
         this.setJMenuBar(menuBar);
+    }
+
+    private void loadGame() {
+        File file = new File("save.txt");
+        if (!file.exists()) {
+            JOptionPane.showMessageDialog(this, "Save file not found!", "Error", JOptionPane.ERROR_MESSAGE);
+            return;
+        }
+        StringBuilder jsonData = new StringBuilder();
+        try (BufferedReader reader = new BufferedReader(new FileReader(file))) {
+            String line;
+            while ((line = reader.readLine()) != null) {
+                jsonData.append(line);
+            }
+
+            // 解析JSON数据
+            JSONObject gameData = new JSONObject(jsonData.toString());
+
+            // 提取step和二维数组
+            step = gameData.getInt("step");
+
+            JSONArray arrayData = gameData.getJSONArray("array");
+            imageDate = new int[arrayData.length()][];
+            for (int i = 0; i < arrayData.length(); i++) {
+                JSONArray jsonRow = arrayData.getJSONArray(i);
+                imageDate[i] = new int[jsonRow.length()];
+                for (int j = 0; j < jsonRow.length(); j++) {
+                    imageDate[i][j] = jsonRow.getInt(j);
+                }
+            }
+
+            // 显示成功加载的消息
+            JOptionPane.showMessageDialog(this, "Progress loaded successfully!");
+
+        } catch (IOException | JSONException e) {
+            e.printStackTrace();
+            JOptionPane.showMessageDialog(this, "Failed to load progress!", "Error", JOptionPane.ERROR_MESSAGE);
+        }
+    }
+
+
+    private void saveGame() {
+        try {
+            // 创建JSON对象
+            JSONObject gameData = new JSONObject();
+
+            // 将二维数组保存为JSONArray
+            JSONArray arrayData = new JSONArray();
+            for (int[] row : imageDate) {
+                JSONArray jsonRow = new JSONArray();
+                for (int value : row) {
+                    jsonRow.put(value);
+                }
+                arrayData.put(jsonRow);
+            }
+
+            // 将step和二维数组添加到JSON对象中
+            gameData.put("array", arrayData);
+            gameData.put("step", step);
+
+            // 将JSON写入文件
+            try (FileWriter writer = new FileWriter("save.txt")) {
+                writer.write(gameData.toString(4));  // 格式化输出，4为缩进级别
+                JOptionPane.showMessageDialog(this, "Progress saved Successfully");
+            }
+        } catch (IOException ioException) {
+            ioException.printStackTrace();
+            JOptionPane.showMessageDialog(this, "Failed to save progress!", "Error", JOptionPane.ERROR_MESSAGE);
+        }
     }
 
     // 随机数组
@@ -233,6 +364,6 @@ public class MainFrame extends JFrame {
         }
 
         // 刷新
-        ImageInit();
+        imageInit();
     }
 }
