@@ -53,7 +53,7 @@ public class MainFrame extends JFrame {
         // 设置窗口的标题
         this.setTitle("Stone Maze V1.0");
         // 设置窗口的大小
-        this.setSize(465,575);
+        this.setSize(465, 565);
         // 设置窗口的位置
         this.setLocationRelativeTo(null);
         // 设置窗口的关闭方式
@@ -212,6 +212,8 @@ public class MainFrame extends JFrame {
             // 提取step和二维数组
             step = gameData.getInt("step");
 
+            timeElapsed = gameData.getInt("time");
+
             JSONArray arrayData = gameData.getJSONArray("array");
             imageDate = new int[arrayData.length()][];
             for (int i = 0; i < arrayData.length(); i++) {
@@ -250,6 +252,7 @@ public class MainFrame extends JFrame {
             // 将step和二维数组添加到JSON对象中
             gameData.put("array", arrayData);
             gameData.put("step", step);
+            gameData.put("time", timeElapsed);
 
             // 将JSON写入文件
             try (FileWriter writer = new FileWriter("save.txt")) {
