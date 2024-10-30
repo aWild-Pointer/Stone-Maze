@@ -183,7 +183,7 @@ public class MainFrame extends JFrame {
             @Override
             public void mouseClicked(java.awt.event.MouseEvent e) {
                 JOptionPane.showMessageDialog(null,
-                        "This is Stone-Maze version 1.0.\nDeveloped by aWild-Pointer.\nresource:https://github.com/aWild-Pointer/Stone-Maze",
+                        "This is Stone-Maze version 1.1.\nDeveloped by aWild-Pointer.\nresource:https://github.com/aWild-Pointer/Stone-Maze",
                         "About",
                         JOptionPane.INFORMATION_MESSAGE);
             }
